@@ -87,7 +87,6 @@ export const SchoolSettings = () => {
   const [activeTab, setActiveTab] = useState<Tab>('agent');
   const [detectingTimezone, setDetectingTimezone] = useState(false);
   const [purchasingPhone, setPurchasingPhone] = useState(false);
-  const [purchasedNumber, setPurchasedNumber] = useState('');
 
   // ── Load settings on mount ──────────────────────────────────────────────
   useEffect(() => {
