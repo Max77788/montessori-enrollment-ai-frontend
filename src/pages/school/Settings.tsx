@@ -214,7 +214,6 @@ export const SchoolSettings = () => {
     try {
       const res = await api.post('/school/purchase-phone');
       const number = res.data.phoneNumber;
-      setPurchasedNumber(number);
       update('aiNumber', number);
       setStatus({ type: 'success', message: `Phone number ${number} purchased and assigned!` });
       setTimeout(() => setStatus(null), 8000);
