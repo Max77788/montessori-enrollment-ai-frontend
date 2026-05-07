@@ -31,6 +31,7 @@ import { DailyInsights } from '../pages/school/DailyInsights';
 import Pricing from '../pages/Pricing';
 import { SchoolBilling } from '../pages/school/Billing';
 import { AdminFinancials } from '../pages/admin/Financials';
+import { PlatformStatus } from '../pages/admin/PlatformStatus';
 
 const RootRedirect = () => {
   const { isAuthenticated, user } = useAuthStore();
@@ -207,6 +208,15 @@ export const router = createBrowserRouter([
           </ProtectedRoute>
         ),
         children: [{ index: true, element: <AdminFinancials /> }],
+      },
+      {
+        path: 'platform-status',
+        element: (
+          <ProtectedRoute requiredRole="admin">
+            <AdminLayout />
+          </ProtectedRoute>
+        ),
+        children: [{ index: true, element: <PlatformStatus /> }],
       },
     ],
   },

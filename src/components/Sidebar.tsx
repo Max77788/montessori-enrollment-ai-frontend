@@ -1,7 +1,7 @@
 import { NavLink } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
-  School, Settings, Users, Plug2, LayoutDashboard, Phone, Lightbulb, X, Bell, CreditCard, DollarSign
+  School, Settings, Users, Plug2, LayoutDashboard, Phone, Lightbulb, X, Bell, CreditCard, DollarSign, Activity
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -17,6 +17,7 @@ export const Sidebar = ({ role, isOpen, onClose }: SidebarProps) => {
     { path: '/admin/dashboard', icon: LayoutDashboard, labelKey: 'dashboard' },
     { path: '/admin/schools', icon: School, labelKey: 'schools' },
     { path: '/admin/financials', icon: DollarSign, labelKey: 'financials' },
+    { path: '/admin/platform-status', icon: Activity, labelKey: 'platform_status' },
     { path: '/admin/phone-numbers', icon: Phone, labelKey: 'phone_numbers' },
     { path: '/admin/ai-number-requests', icon: Bell, labelKey: 'ai_number_requests' },
     { path: '/admin/referrals', icon: Users, labelKey: 'referrals' },

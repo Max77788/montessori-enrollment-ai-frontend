@@ -357,7 +357,7 @@ export const SchoolBilling = () => {
           <div>
             <p className="font-medium">PayPal plan IDs are not set on the server</p>
             <p className="mt-1 text-amber-800/90">
-              Add each Billing Plan ID from the PayPal dashboard to <code className="bg-amber-100/80 px-1 rounded text-xs">montessori-enrollment-ai-backend/.env</code>:
+              Add each Billing Plan ID from the PayPal dashboard to <code className="bg-amber-100/80 px-1 rounded text-xs">nest-ops-backend/.env</code>:
               {' '}<code className="text-xs">PAYPAL_PLAN_STARTER</code>, <code className="text-xs">PAYPAL_PLAN_GROWTH</code>,{' '}
               <code className="text-xs">PAYPAL_PLAN_FULL_ENROLLMENT</code>, <code className="text-xs">PAYPAL_PLAN_DEMO</code>{' '}
               (values look like <code className="text-xs">P-1AB23456CD789012N</code>). Restart the API after saving.

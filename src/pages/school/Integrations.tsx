@@ -39,8 +39,24 @@ export const SchoolIntegrations = () => {
     fetchIntegrations();
     fetchSettings();
     const params = new URLSearchParams(window.location.search);
-    if (params.get('success')) {
-      alert(`Successfully connected ${params.get('success')}!`);
+    const success = params.get('success');
+    const error = params.get('error');
+
+    if (success) {
+      alert(`Successfully connected ${success}!`);
+      window.history.replaceState({}, document.title, window.location.pathname);
+    } else if (error) {
+      let errorMsg = 'Connection failed. Please try again.';
+      if (error === 'google_test_user') {
+        errorMsg = 'Google OAuth Error: Your email is not registered as a test user.\n\n' +
+          'To fix: Go to Google Cloud Console → APIs & Services → OAuth consent screen → ' +
+          'add your email under "Test users". This is because the Google app is in "Testing" mode.';
+      } else if (error === 'google_expired') {
+        errorMsg = 'Google authorization expired. Please try connecting again.';
+      } else if (error === 'outlook') {
+        errorMsg = 'Microsoft Outlook connection failed. Please verify your Outlook credentials and try again.';
+      }
+      alert(errorMsg);
       window.history.replaceState({}, document.title, window.location.pathname);
     }
   }, []);
