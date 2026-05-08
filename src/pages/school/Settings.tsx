@@ -38,6 +38,7 @@ interface SettingsData {
   tourReminderSmsTemplate: string;
   voiceProvider: string;
   vapiAssistantId: string;
+  tourBookingLink: string;
 }
 
 const DEFAULT_QA_PAIRS: QAPair[] = [
@@ -109,6 +110,7 @@ export const SchoolSettings = () => {
         setSettings({
           ...data,
           qaPairs,
+          tourBookingLink: data.tourBookingLink || '',
           enableHumanTransfer: Boolean(data.enableHumanTransfer),
           humanTransferCondition: data.humanTransferCondition || '',
           humanTransferPhoneNumber: data.humanTransferPhoneNumber || '',
@@ -164,6 +166,7 @@ export const SchoolSettings = () => {
       tourReminderSmsTemplate: settings.tourReminderSmsTemplate,
       voiceProvider: 'vapi',
       vapiAssistantId: settings.vapiAssistantId,
+      tourBookingLink: settings.tourBookingLink,
     };
 
     try {
@@ -430,6 +433,20 @@ export const SchoolSettings = () => {
                 </select>
                 <p className="text-xs text-slate-400 mt-1">
                   Use the <strong className="text-blue-600">"Detect TZ"</strong> button above to set this automatically from your address.
+                </p>
+              </div>
+
+              <div className="mt-6 pt-6 border-t border-slate-100">
+                <label className="block text-sm font-medium text-slate-700 mb-1">Tour Booking Link</label>
+                <input
+                  type="url"
+                  value={settings.tourBookingLink || ''}
+                  onChange={e => update('tourBookingLink', e.target.value)}
+                  className="ui-input w-full"
+                  placeholder="https://yourschool.com/book-a-tour"
+                />
+                <p className="text-xs text-slate-400 mt-1">
+                  The link Nora sends via SMS when a caller requests the tour booking form. Use <code className="bg-slate-100 px-1 rounded">{"{{tour_booking_link}}"}</code> in your assistant prompt.
                 </p>
               </div>
 
