@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
     Phone, Loader2, MessageSquare, Play, Pause, Clock,
-    Calendar, ChevronDown, User, Bot, Headphones, Download
+    Calendar, ChevronDown, User, Bot, Headphones
 } from 'lucide-react';
 import api from '../../api/axios';
 
@@ -215,93 +215,154 @@ export const SchoolCallLogs = () => {
                 </div>
             </div>
 
-            <div className="space-y-4">
-                {logs.map((log) => (
-                    <div key={log.id} className={`bg-white border rounded-2xl transition-all ${expandedId === log.id ? 'border-blue-500 shadow-xl' : 'border-slate-200 shadow-sm hover:border-slate-300'}`}>
-                        <div className="px-4 sm:px-6 py-4 flex items-center justify-between cursor-pointer" onClick={() => toggleExpand(log.id)}>
-                            <div className="flex items-center gap-3 sm:gap-5 min-w-0">
-                                <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center transition-all shrink-0 ${expandedId === log.id ? 'bg-blue-600 text-white' : 'bg-slate-50 text-slate-400'}`}>
-                                    <Phone className="w-5 h-5" />
+            {logs.length === 0 ? (
+                <div className="bg-white border border-slate-200 rounded-3xl p-16 text-center">
+                    <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-5">
+                        <Phone className="w-8 h-8 text-slate-300" />
+                    </div>
+                    <h2 className="text-lg font-bold text-slate-500 mb-2">No calls yet</h2>
+                    <p className="text-sm text-slate-400 max-w-sm mx-auto">Incoming calls will appear here once your AI voice agent starts answering inquiries.</p>
+                </div>
+            ) : (
+            <div className="space-y-3">
+                {logs.map((log, idx) => {
+                    const colorSet = ['#6366f1', '#0ea5e9', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6'][idx % 6];
+                    const isExpanded = expandedId === log.id;
+                    const durationMin = Math.floor(log.duration / 60);
+                    const durationSec = Math.round(log.duration % 60);
+                    const hasAudio = log.recordingUrl && !log.recordingUrl.includes('example.com');
+                    const hasTranscript = log.transcript.length > 0;
+                    const hasSummary = log.summary && log.summary.length > 0;
+
+                    return (
+                    <div key={log.id} className={`bg-white border rounded-2xl transition-all duration-300 overflow-hidden ${
+                        isExpanded ? 'border-slate-300 shadow-xl -mx-2 sm:-mx-3 px-2 sm:px-3 py-1' : 'border-slate-100 shadow-sm hover:shadow-md hover:border-slate-200'
+                    }`}>
+                        {/* Card header */}
+                        <div
+                            className="px-5 py-4 flex items-center gap-4 cursor-pointer select-none"
+                            onClick={() => toggleExpand(log.id)}
+                        >
+                            {/* Animated icon */}
+                            <div className="relative flex-shrink-0">
+                                <div className="w-11 h-11 rounded-2xl flex items-center justify-center bg-slate-50 group-hover:bg-slate-100 transition-colors overflow-hidden"
+                                    style={{ background: isExpanded ? `linear-gradient(135deg, ${colorSet}20, ${colorSet}08)` : undefined }}>
+                                    <Phone className="w-5 h-5" style={{ color: isExpanded ? colorSet : '#94a3b8', transition: 'color 0.3s' }} />
                                 </div>
-                                <div className="flex flex-col min-w-0">
-                                    <span className="text-sm sm:text-base font-bold text-slate-900 truncate">{log.participantId.replace('sip_', '')}</span>
-                                    <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-0.5">
-                                        <span className="flex items-center gap-1 text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase whitespace-nowrap">
-                                            <Calendar className="w-3 h-3" />
-                                            {new Date(log.createdAt).toLocaleDateString('en-US', { timeZone: 'America/Chicago', month: 'short', day: 'numeric' })}
-                                        </span>
-                                        <span className="flex items-center gap-1 text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase whitespace-nowrap">
-                                            <Clock className="w-3 h-3" />
-                                            {new Date(log.createdAt).toLocaleTimeString('en-US', { timeZone: 'America/Chicago', hour: '2-digit', minute: '2-digit' })}
-                                        </span>
-                                        <span className="text-[10px] sm:text-[11px] font-bold text-blue-600 whitespace-nowrap">
-                                            {formatDuration(log.duration)}
-                                        </span>
+                                {hasAudio && (
+                                    <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-400 rounded-full border-2 border-white flex items-center justify-center">
+                                        <div className="w-1 h-1 bg-white rounded-full" />
                                     </div>
+                                )}
+                            </div>
+
+                            {/* Main info */}
+                            <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2">
+                                    <span className="text-sm font-bold text-slate-900 truncate">
+                                        {log.participantId.replace(/^sip_/, '').replace(/^\+1/, '') || 'Unknown Caller'}
+                                    </span>
+                                    {hasSummary && (
+                                        <span className="flex-shrink-0 w-1 h-1 rounded-full" style={{ backgroundColor: colorSet }} />
+                                    )}
+                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex-shrink-0">
+                                        {durationMin}:{durationSec.toString().padStart(2, '0')}
+                                    </span>
+                                </div>
+                                <div className="flex items-center gap-3 mt-1">
+                                    <span className="text-[10px] font-medium text-slate-400 flex items-center gap-1">
+                                        <Calendar className="w-3 h-3" />
+                                        {new Date(log.createdAt).toLocaleDateString('en-US', { timeZone: 'America/Chicago', month: 'short', day: 'numeric' })}
+                                    </span>
+                                    <span className="text-[10px] font-medium text-slate-400 flex items-center gap-1">
+                                        <Clock className="w-3 h-3" />
+                                        {new Date(log.createdAt).toLocaleTimeString('en-US', { timeZone: 'America/Chicago', hour: '2-digit', minute: '2-digit' })}
+                                    </span>
+                                    {(hasTranscript || hasSummary) && (
+                                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md"
+                                            style={{ background: `${colorSet}12`, color: colorSet }}>
+                                            {hasSummary ? 'AI Summarized' : 'Transcript Ready'}
+                                        </span>
+                                    )}
                                 </div>
                             </div>
-                            <ChevronDown className={`w-5 h-5 transition-transform duration-300 shrink-0 ${expandedId === log.id ? 'rotate-180 text-blue-600' : 'text-slate-300'}`} />
+
+                            {/* Right: quick meta */}
+                            <div className="flex items-center gap-3 flex-shrink-0">
+                                <div className="hidden sm:flex items-center gap-1.5">
+                                    {hasTranscript && <div className="w-1.5 h-1.5 rounded-full bg-blue-400" title="Transcript available" />}
+                                    {hasSummary && <div className="w-1.5 h-1.5 rounded-full bg-purple-400" title="AI summary" />}
+                                    {hasAudio && <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" title="Recording" />}
+                                </div>
+                                <ChevronDown className={`w-5 h-5 transition-transform duration-300 ${isExpanded ? 'rotate-180' : 'text-slate-300'}`}
+                                    style={{ color: isExpanded ? colorSet : undefined }} />
+                            </div>
                         </div>
 
-                        {expandedId === log.id && (
-                            <div className="p-4 sm:p-6 pt-2 bg-slate-50/30 border-t border-slate-50 animate-in fade-in duration-200">
-                                <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
-                                    {/* Summary & Audio */}
+                        {/* Expanded content */}
+                        {isExpanded && (
+                            <div className="px-5 pb-5 pt-1 border-t border-slate-50 animate-soft">
+                                <div className="grid grid-cols-1 xl:grid-cols-12 gap-5">
+                                    {/* Left: Audio + Summary */}
                                     <div className="xl:col-span-4 space-y-4">
-                                        <AudioPlayer src={log.recordingUrl} />
-                                        {log.summary && (
-                                            <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
+                                        {hasAudio && <AudioPlayer src={log.recordingUrl} />}
+                                        {!hasAudio && (
+                                            <div className="bg-slate-50 border border-slate-100 rounded-xl p-5 text-center">
+                                                <Headphones className="w-6 h-6 text-slate-300 mx-auto mb-2" />
+                                                <p className="text-[11px] font-medium text-slate-400">Recording still processing or unavailable</p>
+                                            </div>
+                                        )}
+                                        {hasSummary && (
+                                            <div className="rounded-xl p-5 border" style={{ background: `${colorSet}06`, borderColor: `${colorSet}20` }}>
                                                 <div className="flex items-center gap-2 mb-3">
-                                                    <div className="w-1 h-3 bg-blue-600 rounded-full" />
-                                                    <h3 className="text-[10px] font-black text-slate-900 uppercase tracking-widest">{t('ai_insights')}</h3>
+                                                    <div className="w-1 h-4 rounded-full" style={{ backgroundColor: colorSet }} />
+                                                    <h3 className="text-[10px] font-black text-slate-700 uppercase tracking-widest">AI Insights</h3>
                                                 </div>
-                                                <p className="text-[13px] text-slate-600 leading-relaxed font-medium italic">"{log.summary}"</p>
+                                                <p className="text-[13px] text-slate-600 leading-relaxed font-medium">"{log.summary}"</p>
                                             </div>
                                         )}
                                     </div>
 
-                                    {/* Complete Transcript */}
+                                    {/* Right: Transcript */}
                                     <div className="xl:col-span-8 flex flex-col">
-                                        <div className="flex items-center justify-between mb-3 px-1">
+                                        <div className="flex items-center justify-between mb-3">
                                             <div className="flex items-center gap-2">
-                                                <MessageSquare className="w-4 h-4 text-blue-500" />
-                                                <h3 className="text-[10px] font-black text-slate-900 uppercase tracking-widest">Conversation Transcript</h3>
+                                                <MessageSquare className="w-4 h-4" style={{ color: colorSet }} />
+                                                <h3 className="text-[10px] font-black text-slate-700 uppercase tracking-widest">Conversation Transcript</h3>
                                             </div>
-                                            <span className="text-[10px] font-bold text-slate-400 px-2 py-0.5 bg-slate-100 rounded-md">
-                                                {log.transcript.length} UTTERANCES
+                                            <span className="text-[10px] font-bold text-slate-400 px-2 py-0.5 bg-slate-50 rounded-lg">
+                                                {log.transcript.length} TURNS
                                             </span>
                                         </div>
 
-                                        <div className="bg-white border border-slate-200 rounded-2xl p-5 max-h-[450px] overflow-y-auto custom-scrollbar shadow-inner">
-                                            {log.transcript.length > 0 ? (
-                                                <div className="space-y-4">
+                                        <div className="bg-slate-50/50 border border-slate-100 rounded-2xl p-4 max-h-[400px] overflow-y-auto">
+                                            {hasTranscript ? (
+                                                <div className="space-y-3">
                                                     {log.transcript.map((msg, idx) => {
                                                         const isAI = msg.role.toLowerCase().includes('assistant') || msg.role.toLowerCase().includes('ai') || msg.role === 'Mia';
                                                         return (
-                                                            <div key={idx} className="flex gap-4 group">
-                                                                <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border ${isAI ? 'bg-blue-50 border-blue-100 text-blue-600' : 'bg-slate-50 border-slate-100 text-slate-400'}`}>
-                                                                    {isAI ? <Bot className="w-4 h-4" /> : <User className="w-4 h-4" />}
+                                                            <div key={idx} className="flex gap-3 group">
+                                                                <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${
+                                                                    isAI ? 'bg-white border border-blue-100 text-blue-500' : 'bg-white border border-slate-100 text-slate-400'
+                                                                }`}>
+                                                                    {isAI ? <Bot className="w-3.5 h-3.5" /> : <User className="w-3.5 h-3.5" />}
                                                                 </div>
                                                                 <div className="flex-1 min-w-0">
-                                                                    <div className="flex items-center gap-2 mb-0.5">
-                                                                        <span className={`text-[10px] font-black uppercase tracking-widest ${isAI ? 'text-blue-600' : 'text-slate-900'}`}>
-                                                                            {isAI ? t('mia_assistant') : t('caller')}
+                                                                    <div className="flex items-center gap-2 mb-1">
+                                                                        <span className={`text-[9px] font-black uppercase tracking-wider ${isAI ? 'text-blue-500' : 'text-slate-600'}`}>
+                                                                            {isAI ? 'Nora (AI)' : 'Caller'}
                                                                         </span>
-                                                                        {msg.timestamp && (
-                                                                            <span className="text-[9px] font-bold text-slate-300">{msg.timestamp}</span>
-                                                                        )}
                                                                     </div>
-                                                                    <p className="text-[13px] text-slate-700 leading-relaxed">{msg.text}</p>
+                                                                    <p className="text-[13px] text-slate-600 leading-relaxed">{msg.text}</p>
                                                                 </div>
                                                             </div>
                                                         );
                                                     })}
                                                 </div>
                                             ) : (
-                                                <div className="py-20 text-center">
-                                                    <MessageSquare className="w-8 h-8 text-slate-200 mx-auto mb-3" />
-                                                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">No transcript data found</p>
-                                                    <p className="text-[11px] text-slate-400 mt-1">This may be due to an active session still processing.</p>
+                                                <div className="py-14 text-center">
+                                                    <MessageSquare className="w-7 h-7 text-slate-200 mx-auto mb-2" />
+                                                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">No transcript available</p>
                                                 </div>
                                             )}
                                         </div>
@@ -310,8 +371,10 @@ export const SchoolCallLogs = () => {
                             </div>
                         )}
                     </div>
-                ))}
+                    );
+                })}
             </div>
+            )}
         </div>
     );
 };
