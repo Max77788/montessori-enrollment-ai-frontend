@@ -8,6 +8,7 @@ import { Link } from 'react-router-dom';
 import axios from 'axios';
 import api from '../../api/axios';
 import { Calendar as CalendarUI } from '../../components/Calendar';
+import { RecentCalls } from '../../components/RecentCalls';
 
 
 const AudioPlayer = ({ src }: { src: string }) => {
@@ -326,6 +327,11 @@ export const SchoolDashboard = () => {
         {metrics.map((metric) => (
           <MetricCard key={metric.label} {...metric} />
         ))}
+      </div>
+
+      {/* Recent Calls from VAPI Structured Output */}
+      <div className="mb-10">
+        <RecentCalls />
       </div>
 
       {/* Row 2: Main Content Layout */}
