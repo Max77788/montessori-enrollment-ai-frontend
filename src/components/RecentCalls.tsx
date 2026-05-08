@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Phone, Mail, Calendar, Clock, CheckCircle, AlertCircle, XCircle, ChevronDown, ChevronUp, User, Users, MessageCircle, Tag } from 'lucide-react';
-import api from '../../api/axios';
+import api from '../api/axios';
 
 interface RecentCall {
   id: string;
@@ -44,7 +44,7 @@ export const RecentCalls = ({ refreshTrigger }: Props) => {
   useEffect(() => {
     setLoading(true);
     api.get('/school/recent-calls')
-      .then(res => {
+      .then((res: any) => {
         setCalls(res.data.calls || []);
         setStats(res.data.stats || { total_calls: 0, tours_booked: 0 });
       })
