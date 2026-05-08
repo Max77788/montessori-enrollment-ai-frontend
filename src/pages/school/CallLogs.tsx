@@ -2,7 +2,8 @@ import { useEffect, useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
     Phone, Loader2, MessageSquare, Play, Pause, Clock,
-    Calendar, ChevronDown, User, Bot, Headphones
+    Calendar, ChevronDown, User, Bot, Headphones,
+    Users, Mail, CheckCircle, AlertCircle, MessageCircle, Tag
 } from 'lucide-react';
 import api from '../../api/axios';
 
@@ -21,6 +22,28 @@ interface CallLogData {
     recordingUrl: string;
     duration: number;
     createdAt: string;
+    // VAPI structured data
+    call_state?: string;
+    parent_name?: string | null;
+    parent_phone?: string | null;
+    parent_email?: string | null;
+    child_name?: string[] | null;
+    child_age?: string[] | null;
+    tour_booked?: boolean;
+    tour_date?: string | null;
+    tour_time?: string | null;
+    questions_asked?: string[];
+    topics_of_interest?: string[];
+    enrollment_urgency?: string;
+    language_spoken?: string;
+    one_pager?: string | null;
+    email_subject?: string;
+    email_body?: string;
+    agent_name?: string;
+    conversation_id?: string;
+    received_at?: string;
+    caller_number?: string;
+    called_number?: string;
 }
 
 const AudioPlayer = ({ src }: { src: string }) => {
@@ -193,6 +216,19 @@ export const SchoolCallLogs = () => {
         return `${min}:${sec.toString().padStart(2, '0')}`;
     };
 
+    const formatTime = (iso: string) => {
+        return new Date(iso).toLocaleString('en-US', {
+            month: 'short', day: 'numeric',
+            hour: '2-digit', minute: '2-digit',
+        });
+    };
+
+    const urgencyColor = (u: string) => {
+        if (u === 'immediate') return 'text-red-500 bg-red-50 border-red-100';
+        if (u === 'within weeks') return 'text-amber-600 bg-amber-50 border-amber-100';
+        return 'text-slate-400 bg-slate-50 border-slate-100';
+    };
+
     if (loading) {
         return (
             <div className="flex flex-col items-center justify-center h-[60vh] gap-3">
@@ -228,11 +264,10 @@ export const SchoolCallLogs = () => {
                 {logs.map((log, idx) => {
                     const colorSet = ['#6366f1', '#0ea5e9', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6'][idx % 6];
                     const isExpanded = expandedId === log.id;
-                    const durationMin = Math.floor(log.duration / 60);
-                    const durationSec = Math.round(log.duration % 60);
                     const hasAudio = log.recordingUrl && !log.recordingUrl.includes('example.com');
                     const hasTranscript = log.transcript.length > 0;
                     const hasSummary = log.summary && log.summary.length > 0;
+                    const hasStructuredData = !!(log.parent_name || log.tour_booked || (log.topics_of_interest && log.topics_of_interest.length > 0));
 
                     return (
                     <div key={log.id} className={`bg-white border rounded-2xl transition-all duration-300 overflow-hidden ${
@@ -243,11 +278,17 @@ export const SchoolCallLogs = () => {
                             className="px-5 py-4 flex items-center gap-4 cursor-pointer select-none"
                             onClick={() => toggleExpand(log.id)}
                         >
-                            {/* Animated icon */}
+                            {/* Status icon */}
                             <div className="relative flex-shrink-0">
-                                <div className="w-11 h-11 rounded-2xl flex items-center justify-center bg-slate-50 group-hover:bg-slate-100 transition-colors overflow-hidden"
+                                <div className="w-11 h-11 rounded-2xl flex items-center justify-center bg-slate-50 overflow-hidden"
                                     style={{ background: isExpanded ? `linear-gradient(135deg, ${colorSet}20, ${colorSet}08)` : undefined }}>
-                                    <Phone className="w-5 h-5" style={{ color: isExpanded ? colorSet : '#94a3b8', transition: 'color 0.3s' }} />
+                                    {log.call_state === 'complete' && log.tour_booked ? (
+                                        <CheckCircle className="w-5 h-5 text-emerald-400" />
+                                    ) : log.call_state === 'complete' ? (
+                                        <CheckCircle className="w-5 h-5 text-blue-400" />
+                                    ) : (
+                                        <Phone className="w-5 h-5" style={{ color: isExpanded ? colorSet : '#94a3b8', transition: 'color 0.3s' }} />
+                                    )}
                                 </div>
                                 {hasAudio && (
                                     <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-400 rounded-full border-2 border-white flex items-center justify-center">
@@ -258,30 +299,45 @@ export const SchoolCallLogs = () => {
 
                             {/* Main info */}
                             <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-2 flex-wrap">
                                     <span className="text-sm font-bold text-slate-900 truncate">
-                                        {log.participantId.replace(/^sip_/, '').replace(/^\+1/, '') || 'Unknown Caller'}
+                                        {log.parent_name || log.caller_number || log.participantId.replace(/^sip_/, '').replace(/^\+1/, '') || 'Unknown Caller'}
                                     </span>
-                                    {hasSummary && (
+                                    {log.tour_booked && (
+                                        <span className="flex-shrink-0 px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-100">
+                                            Tour Booked
+                                        </span>
+                                    )}
+                                    {log.enrollment_urgency && log.enrollment_urgency !== 'unknown' && (
+                                        <span className={`flex-shrink-0 px-1.5 py-0.5 rounded text-[10px] font-medium border ${urgencyColor(log.enrollment_urgency)}`}>
+                                            {log.enrollment_urgency}
+                                        </span>
+                                    )}
+                                    {hasSummary && !log.tour_booked && !(log.enrollment_urgency && log.enrollment_urgency !== 'unknown') && (
                                         <span className="flex-shrink-0 w-1 h-1 rounded-full" style={{ backgroundColor: colorSet }} />
                                     )}
-                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex-shrink-0">
-                                        {durationMin}:{durationSec.toString().padStart(2, '0')}
-                                    </span>
                                 </div>
-                                <div className="flex items-center gap-3 mt-1">
+                                <div className="flex items-center gap-3 mt-1 flex-wrap">
                                     <span className="text-[10px] font-medium text-slate-400 flex items-center gap-1">
                                         <Calendar className="w-3 h-3" />
-                                        {new Date(log.createdAt).toLocaleDateString('en-US', { timeZone: 'America/Chicago', month: 'short', day: 'numeric' })}
+                                        {log.received_at ? formatTime(log.received_at) : new Date(log.createdAt).toLocaleDateString('en-US', { timeZone: 'America/Chicago', month: 'short', day: 'numeric' })}
                                     </span>
-                                    <span className="text-[10px] font-medium text-slate-400 flex items-center gap-1">
-                                        <Clock className="w-3 h-3" />
-                                        {new Date(log.createdAt).toLocaleTimeString('en-US', { timeZone: 'America/Chicago', hour: '2-digit', minute: '2-digit' })}
-                                    </span>
+                                    {log.duration > 0 && (
+                                        <span className="text-[10px] font-medium text-slate-400 flex items-center gap-1">
+                                            <Clock className="w-3 h-3" />
+                                            {formatDuration(log.duration)}
+                                        </span>
+                                    )}
+                                    {log.child_name && log.child_name.length > 0 && (
+                                        <span className="text-[10px] font-medium text-slate-400 flex items-center gap-1">
+                                            <Users className="w-3 h-3" />
+                                            {log.child_name.join(', ')}
+                                        </span>
+                                    )}
                                     {(hasTranscript || hasSummary) && (
                                         <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md"
                                             style={{ background: `${colorSet}12`, color: colorSet }}>
-                                            {hasSummary ? 'AI Summarized' : 'Transcript Ready'}
+                                            {hasStructuredData ? 'AI Analyzed' : hasSummary ? 'AI Summarized' : 'Transcript Ready'}
                                         </span>
                                     )}
                                 </div>
@@ -302,8 +358,79 @@ export const SchoolCallLogs = () => {
                         {/* Expanded content */}
                         {isExpanded && (
                             <div className="px-5 pb-5 pt-1 border-t border-slate-50 animate-soft">
+                                {/* ── Structured Data Grid ──────────────────────── */}
+                                {hasStructuredData && (
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5">
+                                        {/* Parent & Contact */}
+                                        <div className="bg-slate-50 rounded-xl p-4">
+                                            <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-2">Parent</div>
+                                            <div className="text-sm font-bold text-slate-900">{log.parent_name || 'Unknown'}</div>
+                                            {log.parent_phone && <div className="text-xs text-slate-500 mt-0.5 flex items-center gap-1"><Phone className="w-3 h-3" />{log.parent_phone}</div>}
+                                            {log.parent_email && <div className="text-xs text-slate-500 mt-0.5 flex items-center gap-1"><Mail className="w-3 h-3" />{log.parent_email}</div>}
+                                        </div>
+                                        {/* Children */}
+                                        <div className="bg-slate-50 rounded-xl p-4">
+                                            <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-2">Children</div>
+                                            {log.child_name && log.child_name.length > 0 ? (
+                                                <div className="space-y-1">
+                                                    {log.child_name.map((name, i) => (
+                                                        <div key={i} className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                                                            <Users className="w-3.5 h-3.5 text-slate-400" />
+                                                            {name}{log.child_age?.[i] ? ` · ${log.child_age[i]}` : ''}
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            ) : (
+                                                <div className="text-sm text-slate-400">Not recorded</div>
+                                            )}
+                                        </div>
+                                        {/* Tour */}
+                                        <div className="bg-slate-50 rounded-xl p-4">
+                                            <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-2">Tour</div>
+                                            {log.tour_booked && log.tour_date ? (
+                                                <div>
+                                                    <div className="text-sm font-bold text-emerald-700 flex items-center gap-1.5">
+                                                        <Calendar className="w-4 h-4" />
+                                                        {log.tour_date} at {log.tour_time || 'TBD'}
+                                                    </div>
+                                                    <div className="text-[10px] text-emerald-500 mt-0.5">Tour confirmed</div>
+                                                </div>
+                                            ) : (
+                                                <div>
+                                                    <div className="text-sm font-bold text-amber-700 flex items-center gap-1.5">
+                                                        <AlertCircle className="w-4 h-4" />
+                                                        Not booked
+                                                    </div>
+                                                    <div className="text-[10px] text-amber-500 mt-0.5">Follow-up recommended</div>
+                                                </div>
+                                            )}
+                                            {log.enrollment_urgency && log.enrollment_urgency !== 'unknown' && (
+                                                <span className={`inline-block mt-2 px-2 py-0.5 rounded text-[9px] font-bold ${urgencyColor(log.enrollment_urgency)}`}>
+                                                    {log.enrollment_urgency}
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Topics & Questions */}
+                                {((log.topics_of_interest && log.topics_of_interest.length > 0) || (log.questions_asked && log.questions_asked.length > 0)) && (
+                                    <div className="flex flex-wrap items-center gap-2 mb-5 pt-2 border-t border-slate-50">
+                                        {log.topics_of_interest?.map((t, i) => (
+                                            <span key={i} className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-blue-50 text-blue-600 border border-blue-100">
+                                                {t}
+                                            </span>
+                                        ))}
+                                        {log.questions_asked?.map((q, i) => (
+                                            <span key={`q-${i}`} className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-purple-50 text-purple-600 border border-purple-100 flex items-center gap-1">
+                                                <MessageCircle className="w-2.5 h-2.5" />{q}
+                                            </span>
+                                        ))}
+                                    </div>
+                                )}
+
                                 <div className="grid grid-cols-1 xl:grid-cols-12 gap-5">
-                                    {/* Left: Audio + Summary */}
+                                    {/* Left: Audio + Summary + One-pager */}
                                     <div className="xl:col-span-4 space-y-4">
                                         {hasAudio && <AudioPlayer src={log.recordingUrl} />}
                                         {!hasAudio && (
@@ -321,6 +448,49 @@ export const SchoolCallLogs = () => {
                                                 <p className="text-[13px] text-slate-600 leading-relaxed font-medium">"{log.summary}"</p>
                                             </div>
                                         )}
+                                        {/* Email info */}
+                                        {(log.email_subject || log.email_body) && (
+                                            <div className="rounded-xl p-5 border border-blue-100 bg-blue-50/50">
+                                                <div className="flex items-center gap-2 mb-3">
+                                                    <Mail className="w-3.5 h-3.5 text-blue-500" />
+                                                    <h3 className="text-[10px] font-black text-slate-700 uppercase tracking-widest">Email Sent</h3>
+                                                </div>
+                                                {log.email_subject && <p className="text-xs font-bold text-slate-800 mb-1">{log.email_subject}</p>}
+                                                {log.email_body && <p className="text-[11px] text-slate-500 leading-relaxed line-clamp-4">{log.email_body}</p>}
+                                            </div>
+                                        )}
+                                        {/* One-pager preview */}
+                                        {log.one_pager && (
+                                            <div className="rounded-xl p-5 border border-purple-100 bg-purple-50/50">
+                                                <div className="flex items-center gap-2 mb-3">
+                                                    <Tag className="w-3.5 h-3.5 text-purple-500" />
+                                                    <h3 className="text-[10px] font-black text-slate-700 uppercase tracking-widest">One-Pager</h3>
+                                                </div>
+                                                <p className="text-[11px] text-slate-600 leading-relaxed line-clamp-6">{log.one_pager}</p>
+                                            </div>
+                                        )}
+                                        {/* Call metadata */}
+                                        <div className="rounded-xl p-4 border border-slate-100 bg-white">
+                                            <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-2">Call Details</div>
+                                            <div className="space-y-1.5 text-xs text-slate-600">
+                                                {log.agent_name && <div className="flex justify-between"><span className="text-slate-400">Agent</span><span className="font-medium">{log.agent_name}</span></div>}
+                                                {log.caller_number && <div className="flex justify-between"><span className="text-slate-400">From</span><span className="font-medium">{log.caller_number}</span></div>}
+                                                {log.called_number && <div className="flex justify-between"><span className="text-slate-400">To</span><span className="font-medium">{log.called_number}</span></div>}
+                                                {log.language_spoken && log.language_spoken !== 'English' && <div className="flex justify-between"><span className="text-slate-400">Language</span><span className="font-medium">{log.language_spoken}</span></div>}
+                                                <div className="flex justify-between">
+                                                    <span className="text-slate-400">Status</span>
+                                                    <span className={`font-bold uppercase text-[10px] px-1.5 py-0.5 rounded ${
+                                                        log.call_state === 'complete' && log.tour_booked
+                                                            ? 'bg-emerald-50 text-emerald-600'
+                                                            : log.call_state === 'complete'
+                                                            ? 'bg-blue-50 text-blue-600'
+                                                            : 'bg-slate-100 text-slate-500'
+                                                    }`}>
+                                                        {log.call_state || 'unknown'}{log.tour_booked ? ' · Booked' : ''}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
 
                                     {/* Right: Transcript */}
