@@ -190,6 +190,8 @@ export const DailyInsights = () => {
   const [feedbackInputs, setFeedbackInputs] = useState<Record<string, string>>({});
   const [markingAction, setMarkingAction] = useState<Record<string, boolean>>({});
   const [closeConfirm, setCloseConfirm] = useState<string | null>(null);
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const [selectedDate, setSelectedDate] = useState(todayStr);
 
   const handlePrintTourCard = (tour: TodayTour) => {
     const askedAbout = (tour.questionsAsked || []).filter(Boolean);
@@ -335,10 +337,9 @@ export const DailyInsights = () => {
   useEffect(() => {
     const load = async () => {
       try {
-        // Load both endpoints in parallel to reduce total load time
         const [actionRes, res] = await Promise.all([
           api.get('/school/action-needed'),
-          api.get('/school/daily-insights')
+          api.get(`/school/daily-insights?date=${selectedDate}`)
         ]);
         setNeedsAttention(actionRes.data.actionNeeded || []);
         const apiTours: TodayTour[] = res.data.todaysTours || [];
@@ -354,7 +355,7 @@ export const DailyInsights = () => {
     load();
     const interval = setInterval(load, 60000);
     return () => clearInterval(interval);
-  }, []);
+  }, [selectedDate]);
 
   const handleMarkActionTaken = async (callId: string) => {
     setMarkingAction(prev => ({ ...prev, [callId]: true }));
@@ -412,8 +413,6 @@ export const DailyInsights = () => {
     setCloseConfirm(null);
   };
 
-  const today = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
-
   // Calculate call timing buckets from actual todayCalls data
   const callTimingData = useMemo(() => {
     const counts: Record<'Morning' | 'Afternoon' | 'Evening', number> = {
@@ -462,9 +461,23 @@ export const DailyInsights = () => {
   return (
     <div className="animate-soft space-y-8">
       {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-slate-900 mb-1">Daily Insights</h1>
-        <p className="text-sm text-slate-500">{today} • Good morning — here's what needs your attention today</p>
+      <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold text-slate-900 mb-1">Daily Insights</h1>
+          <p className="text-sm text-slate-500">
+            {new Date(selectedDate + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Date</label>
+          <input
+            type="date"
+            value={selectedDate}
+            onChange={e => setSelectedDate(e.target.value)}
+            max={todayStr}
+            className="ui-input text-sm font-medium px-3 py-2 rounded-lg border-slate-200"
+          />
+        </div>
       </div>
 
       {/* Top Row Metrics */}
