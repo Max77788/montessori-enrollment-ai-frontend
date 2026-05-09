@@ -342,6 +342,41 @@ export const SchoolSettings = () => {
                 <Phone className="w-4 h-4 text-slate-400" />
                 School Identity & Routing
               </h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">AI Phone Number</label>
+                  {settings.aiNumber ? (
+                    <input
+                      type="text"
+                      value={settings.aiNumber}
+                      readOnly
+                      className="ui-input w-full bg-green-50 border-green-200 text-green-700 font-medium cursor-default"
+                    />
+                  ) : (
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value="No number assigned"
+                        readOnly
+                        className="ui-input w-full bg-amber-50 border-amber-200 text-amber-700 cursor-default"
+                      />
+                      <button
+                        type="button"
+                        onClick={handlePurchasePhone}
+                        disabled={purchasingPhone}
+                        className="px-3 py-2 text-sm font-medium rounded-lg transition-colors flex items-center gap-2 whitespace-nowrap bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white"
+                      >
+                        {purchasingPhone ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                        {purchasingPhone ? 'Buying...' : 'Buy'}
+                      </button>
+                    </div>
+                  )}
+                  <p className="text-xs text-slate-400 mt-1">
+                    {settings.aiNumber ? 'The AI-managed number callers dial.' : 'Purchase a Twilio number for AI calls.'}
+                  </p>
+                </div>
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">School Name</label>
