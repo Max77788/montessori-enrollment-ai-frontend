@@ -450,6 +450,20 @@ export const SchoolSettings = () => {
                 </p>
               </div>
 
+              <div className="mt-6 pt-6 border-t border-slate-100">
+                <label className="block text-sm font-medium text-slate-700 mb-1">Call Forwarding Number</label>
+                <input
+                  type="tel"
+                  value={settings.humanTransferPhoneNumber || ''}
+                  onChange={e => update('humanTransferPhoneNumber', e.target.value)}
+                  className="ui-input w-full"
+                  placeholder="+1 (555) 123-4567"
+                />
+                <p className="text-xs text-slate-400 mt-1">
+                  If a caller asks to speak with a human, Nora will transfer the call to this number.
+                </p>
+              </div>
+
             </div>
 
             {/* Q&A Knowledge Base - MOVED DOWN */}
