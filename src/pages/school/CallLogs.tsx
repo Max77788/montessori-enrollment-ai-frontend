@@ -251,6 +251,16 @@ export const SchoolCallLogs = () => {
                 </div>
             </div>
 
+            {/* Color Legend */}
+            <div className="mb-6 flex flex-wrap items-center gap-4 text-[10px] font-medium text-slate-500 bg-white border border-slate-200 rounded-xl px-4 py-2.5">
+                <span className="text-slate-400 font-bold uppercase tracking-wider text-[9px]">Legend:</span>
+                <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-emerald-400 inline-block" /> Tour Booked</span>
+                <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-blue-400 inline-block" /> Call Complete</span>
+                <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-purple-400 inline-block" /> AI Summary</span>
+                <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-blue-400 inline-block" /> Transcript</span>
+                <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block" /> Recording</span>
+            </div>
+
             {logs.length === 0 ? (
                 <div className="bg-white border border-slate-200 rounded-3xl p-16 text-center">
                     <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-5">
@@ -465,6 +475,7 @@ export const SchoolCallLogs = () => {
                                                 <div className="flex items-center gap-2 mb-3">
                                                     <Tag className="w-3.5 h-3.5 text-purple-500" />
                                                     <h3 className="text-[10px] font-black text-slate-700 uppercase tracking-widest">One-Pager</h3>
+                                                    <span className="text-[9px] text-purple-400 italic" title="AI-generated summary card with call highlights, parent details, and tour info — printable for staff reference">AI-generated call summary card for staff</span>
                                                 </div>
                                                 <p className="text-[11px] text-slate-600 leading-relaxed line-clamp-6">{log.one_pager}</p>
                                             </div>
