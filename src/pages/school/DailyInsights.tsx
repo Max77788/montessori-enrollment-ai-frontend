@@ -426,15 +426,6 @@ export const DailyInsights = () => {
     return 'Evening';
   }, [callTimingData]);
 
-  if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center h-[70vh] gap-3">
-        <Loader2 className="w-8 h-8 text-amber-500 animate-spin" />
-        <p className="text-slate-500 text-sm">Loading daily insights…</p>
-      </div>
-    );
-  }
-
   return (
     <div className="animate-soft space-y-8">
       {/* Header */}
@@ -459,40 +450,45 @@ export const DailyInsights = () => {
 
       {/* Top Row Metrics */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-8">
-        {/* CALLS TODAY */}
-        <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
-          <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">CALLS TODAY</div>
-          <div className="text-2xl font-bold text-slate-900 tabular-nums">{todayCalls.length}</div>
-          <div className="text-xs text-slate-500 mt-1">Since midnight</div>
-        </div>
-
-        {/* ACTION NEEDED */}
-        <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
-          <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">ACTION NEEDED</div>
-          <div className="text-2xl font-bold text-red-600 tabular-nums">{needsAttention.length}</div>
-          <div className="text-xs text-slate-500 mt-1">No tour booked</div>
-        </div>
-
-        {/* TOURS TODAY */}
-        <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
-          <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">TOURS TODAY</div>
-          <div className="text-2xl font-bold text-slate-900 tabular-nums">{todaysTours.length}</div>
-          <div className="text-xs text-slate-500 mt-1">
-            {todaysTours.length > 0 
-              ? `${new Date(todaysTours[0].scheduledAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - Completed`
-              : 'No tours'
-            }
-          </div>
-        </div>
-
-        {/* PEAK CALL TIME */}
-        <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
-          <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">PEAK CALL TIME</div>
-          <div className="text-2xl font-bold text-slate-900">{peakCallTime}</div>
-          <div className="text-xs text-slate-500 mt-1">
-            {todayCalls.length > 0 ? 'Staff available then?' : 'No calls today'}
-          </div>
-        </div>
+        {loading ? (
+          [1,2,3,4].map(i => (
+            <div key={i} className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm animate-pulse">
+              <div className="h-3 bg-slate-100 rounded w-24 mb-2" />
+              <div className="h-7 bg-slate-100 rounded w-12 mb-1" />
+              <div className="h-3 bg-slate-50 rounded w-20" />
+            </div>
+          ))
+        ) : (
+          <>
+            <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">CALLS TODAY</div>
+              <div className="text-2xl font-bold text-slate-900 tabular-nums">{todayCalls.length}</div>
+              <div className="text-xs text-slate-500 mt-1">Since midnight</div>
+            </div>
+            <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">ACTION NEEDED</div>
+              <div className="text-2xl font-bold text-red-600 tabular-nums">{needsAttention.length}</div>
+              <div className="text-xs text-slate-500 mt-1">No tour booked</div>
+            </div>
+            <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">TOURS TODAY</div>
+              <div className="text-2xl font-bold text-slate-900 tabular-nums">{todaysTours.length}</div>
+              <div className="text-xs text-slate-500 mt-1">
+                {todaysTours.length > 0
+                  ? `${new Date(todaysTours[0].scheduledAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - Completed`
+                  : 'No tours'
+                }
+              </div>
+            </div>
+            <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">PEAK CALL TIME</div>
+              <div className="text-2xl font-bold text-slate-900">{peakCallTime}</div>
+              <div className="text-xs text-slate-500 mt-1">
+                {todayCalls.length > 0 ? 'Staff available then?' : 'No calls today'}
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
       {/* ── Main Content Grid ───────────────────────────────────────────── */}
@@ -509,7 +505,22 @@ export const DailyInsights = () => {
             )}
           </div>
 
-          {needsAttention.length === 0 ? (
+          {loading ? (
+            <div className="space-y-3">
+              {[1,2,3].map(i => (
+                <div key={i} className="bg-white border border-slate-200 rounded-xl p-5 animate-pulse">
+                  <div className="flex items-start gap-4">
+                    <div className="w-10 h-10 bg-slate-100 rounded-full" />
+                    <div className="flex-1 space-y-2">
+                      <div className="h-4 bg-slate-100 rounded w-32" />
+                      <div className="h-3 bg-slate-50 rounded w-48" />
+                      <div className="h-3 bg-slate-50 rounded w-24" />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : needsAttention.length === 0 ? (
             <div className="bg-white border border-slate-200 rounded-xl p-10 text-center shadow-sm">
               <CheckCircle2 className="w-10 h-10 text-emerald-400 mx-auto mb-3" />
               <p className="text-slate-700 font-semibold">All clear!</p>

@@ -95,16 +95,7 @@ export const SchoolDashboard = () => {
 
 
 
-  if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center h-[70vh] gap-3">
-        <Loader2 className="w-8 h-8 text-primary-600 animate-spin" />
-        <p className="text-slate-500 text-sm">{t('loading')}</p>
-      </div>
-    );
-  }
-
-  if (!data) {
+  if (!data && !loading) {
     return (
       <div className="bg-white border border-slate-200 rounded-xl p-12 text-center">
         <Activity className="w-12 h-12 text-slate-300 mx-auto mb-4" />
@@ -114,7 +105,9 @@ export const SchoolDashboard = () => {
     );
   }
 
-  const { metrics, chartData, recentCalls } = data;
+  const metrics = data?.metrics || [];
+  const chartData = data?.chartData || [];
+  const recentCalls = data?.recentCalls || [];
 
 
   return (
@@ -179,9 +172,19 @@ export const SchoolDashboard = () => {
 
       {/* Row 1: Top Metrics (Full Width) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 md:gap-5 mb-10">
-        {metrics.map((metric) => (
-          <MetricCard key={metric.label} {...metric} />
-        ))}
+        {loading ? (
+          [1,2,3,4,5].map(i => (
+            <div key={i} className="bg-white border border-slate-200 rounded-xl p-5 animate-pulse">
+              <div className="h-4 bg-slate-100 rounded w-20 mb-3" />
+              <div className="h-8 bg-slate-100 rounded w-16 mb-2" />
+              <div className="h-3 bg-slate-50 rounded w-24" />
+            </div>
+          ))
+        ) : (
+          metrics.map((metric) => (
+            <MetricCard key={metric.label} {...metric} />
+          ))
+        )}
       </div>
 
       {/* Recent Calls from VAPI Structured Output */}
@@ -203,7 +206,9 @@ export const SchoolDashboard = () => {
             </div>
           </div>
           <div className="w-full h-[400px]">
-            {chartData?.length > 0 ? (
+            {loading ? (
+              <div className="h-full bg-slate-50 rounded-xl animate-pulse" />
+            ) : chartData?.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={chartData} margin={{ top: 5, right: 10, bottom: 5, left: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />

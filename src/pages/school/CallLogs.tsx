@@ -229,15 +229,6 @@ export const SchoolCallLogs = () => {
         return 'text-slate-400 bg-slate-50 border-slate-100';
     };
 
-    if (loading) {
-        return (
-            <div className="flex flex-col items-center justify-center h-[60vh] gap-3">
-                <Loader2 className="w-6 h-6 text-blue-600 animate-spin" />
-                <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">{t('loading')}</p>
-            </div>
-        );
-    }
-
     return (
         <div className="max-w-6xl mx-auto py-6 px-4">
             <div className="mb-8 flex flex-col sm:flex-row sm:items-baseline justify-between border-b border-slate-100 pb-6 gap-4">
@@ -259,7 +250,22 @@ export const SchoolCallLogs = () => {
                 <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-slate-300 inline-block" /> No Tour</span>
             </div>
 
-            {logs.length === 0 ? (
+            {loading ? (
+                <div className="space-y-3">
+                    {[1,2,3,4,5].map(i => (
+                        <div key={i} className="bg-white border border-slate-100 rounded-2xl px-5 py-4 animate-pulse">
+                            <div className="flex items-center gap-4">
+                                <div className="w-11 h-11 bg-slate-100 rounded-2xl" />
+                                <div className="flex-1 space-y-2">
+                                    <div className="h-4 bg-slate-100 rounded w-40" />
+                                    <div className="h-3 bg-slate-50 rounded w-24" />
+                                </div>
+                                <div className="w-5 h-5 bg-slate-100 rounded" />
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            ) : logs.length === 0 ? (
                 <div className="bg-white border border-slate-200 rounded-3xl p-16 text-center">
                     <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-5">
                         <Phone className="w-8 h-8 text-slate-300" />
