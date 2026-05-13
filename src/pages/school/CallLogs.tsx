@@ -253,12 +253,10 @@ export const SchoolCallLogs = () => {
 
             {/* Color Legend */}
             <div className="mb-6 flex flex-wrap items-center gap-4 text-[10px] font-medium text-slate-500 bg-white border border-slate-200 rounded-xl px-4 py-2.5">
-                <span className="text-slate-400 font-bold uppercase tracking-wider text-[9px]">Legend:</span>
+                <span className="text-slate-400 font-bold uppercase tracking-wider text-[9px]">Status:</span>
                 <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-emerald-400 inline-block" /> Tour Booked</span>
-                <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-blue-400 inline-block" /> Call Complete</span>
-                <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-purple-400 inline-block" /> AI Summary</span>
-                <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-blue-400 inline-block" /> Transcript</span>
-                <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block" /> Recording</span>
+                <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-blue-400 inline-block" /> Completed</span>
+                <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-slate-300 inline-block" /> No Tour</span>
             </div>
 
             {logs.length === 0 ? (
@@ -272,7 +270,6 @@ export const SchoolCallLogs = () => {
             ) : (
             <div className="space-y-3">
                 {logs.map((log, idx) => {
-                    const colorSet = ['#6366f1', '#0ea5e9', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6'][idx % 6];
                     const isExpanded = expandedId === log.id;
                     const hasAudio = log.recordingUrl && !log.recordingUrl.includes('example.com');
                     const hasTranscript = log.transcript.length > 0;
@@ -281,7 +278,7 @@ export const SchoolCallLogs = () => {
 
                     return (
                     <div key={log.id} className={`bg-white border rounded-2xl transition-all duration-300 overflow-hidden ${
-                        isExpanded ? 'border-slate-300 shadow-xl -mx-2 sm:-mx-3 px-2 sm:px-3 py-1' : 'border-slate-100 shadow-sm hover:shadow-md hover:border-slate-200'
+                        isExpanded ? 'border-slate-300 shadow-lg -mx-2 sm:-mx-3 px-2 sm:px-3 py-1' : 'border-slate-100 shadow-sm hover:shadow-md hover:border-slate-200'
                     }`}>
                         {/* Card header */}
                         <div
@@ -290,14 +287,13 @@ export const SchoolCallLogs = () => {
                         >
                             {/* Status icon */}
                             <div className="relative flex-shrink-0">
-                                <div className="w-11 h-11 rounded-2xl flex items-center justify-center bg-slate-50 overflow-hidden"
-                                    style={{ background: isExpanded ? `linear-gradient(135deg, ${colorSet}20, ${colorSet}08)` : undefined }}>
+                                <div className="w-11 h-11 rounded-2xl flex items-center justify-center bg-slate-50">
                                     {log.call_state === 'complete' && log.tour_booked ? (
                                         <CheckCircle className="w-5 h-5 text-emerald-400" />
                                     ) : log.call_state === 'complete' ? (
                                         <CheckCircle className="w-5 h-5 text-blue-400" />
                                     ) : (
-                                        <Phone className="w-5 h-5" style={{ color: isExpanded ? colorSet : '#94a3b8', transition: 'color 0.3s' }} />
+                                        <Phone className="w-5 h-5" style={{ color: isExpanded ? '#3b82f6' : '#94a3b8', transition: 'color 0.3s' }} />
                                     )}
                                 </div>
                                 {hasAudio && (
@@ -324,7 +320,7 @@ export const SchoolCallLogs = () => {
                                         </span>
                                     )}
                                     {hasSummary && !log.tour_booked && !(log.enrollment_urgency && log.enrollment_urgency !== 'unknown') && (
-                                        <span className="flex-shrink-0 w-1 h-1 rounded-full" style={{ backgroundColor: colorSet }} />
+                                        <span className="flex-shrink-0 w-1 h-1 rounded-full" style={{ backgroundColor: '#3b82f6' }} />
                                     )}
                                 </div>
                                 <div className="flex items-center gap-3 mt-1 flex-wrap">
@@ -346,7 +342,7 @@ export const SchoolCallLogs = () => {
                                     )}
                                     {(hasTranscript || hasSummary) && (
                                         <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md"
-                                            style={{ background: `${colorSet}12`, color: colorSet }}>
+                                            style={{ background: `${'#3b82f6'}12`, color: '#3b82f6' }}>
                                             {hasStructuredData ? 'AI Analyzed' : hasSummary ? 'AI Summarized' : 'Transcript Ready'}
                                         </span>
                                     )}
@@ -361,7 +357,7 @@ export const SchoolCallLogs = () => {
                                     {hasAudio && <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" title="Recording" />}
                                 </div>
                                 <ChevronDown className={`w-5 h-5 transition-transform duration-300 ${isExpanded ? 'rotate-180' : 'text-slate-300'}`}
-                                    style={{ color: isExpanded ? colorSet : undefined }} />
+                                    style={{ color: isExpanded ? '#3b82f6' : undefined }} />
                             </div>
                         </div>
 
@@ -450,9 +446,9 @@ export const SchoolCallLogs = () => {
                                             </div>
                                         )}
                                         {hasSummary && (
-                                            <div className="rounded-xl p-5 border" style={{ background: `${colorSet}06`, borderColor: `${colorSet}20` }}>
+                                            <div className="rounded-xl p-5 border" style={{ background: `${'#3b82f6'}06`, borderColor: `${'#3b82f6'}20` }}>
                                                 <div className="flex items-center gap-2 mb-3">
-                                                    <div className="w-1 h-4 rounded-full" style={{ backgroundColor: colorSet }} />
+                                                    <div className="w-1 h-4 rounded-full" style={{ backgroundColor: '#3b82f6' }} />
                                                     <h3 className="text-[10px] font-black text-slate-700 uppercase tracking-widest">AI Insights</h3>
                                                 </div>
                                                 <p className="text-[13px] text-slate-600 leading-relaxed font-medium">"{log.summary}"</p>
@@ -508,7 +504,7 @@ export const SchoolCallLogs = () => {
                                     <div className="xl:col-span-8 flex flex-col">
                                         <div className="flex items-center justify-between mb-3">
                                             <div className="flex items-center gap-2">
-                                                <MessageSquare className="w-4 h-4" style={{ color: colorSet }} />
+                                                <MessageSquare className="w-4 h-4" style={{ color: '#3b82f6' }} />
                                                 <h3 className="text-[10px] font-black text-slate-700 uppercase tracking-widest">Conversation Transcript</h3>
                                             </div>
                                             <span className="text-[10px] font-bold text-slate-400 px-2 py-0.5 bg-slate-50 rounded-lg">
