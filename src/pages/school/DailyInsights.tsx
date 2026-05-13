@@ -308,18 +308,24 @@ export const DailyInsights = () => {
 
   useEffect(() => {
     const load = async () => {
+      setLoading(true);
       try {
-        const [actionRes, res] = await Promise.all([
-          api.get('/school/action-needed'),
-          api.get(`/school/daily-insights?date=${selectedDate}`)
-        ]);
-        setNeedsAttention(actionRes.data.actionNeeded || []);
+        // Load daily-insights first (fast stats + tours), show page immediately
+        const res = await api.get(`/school/daily-insights?date=${selectedDate}`);
         const apiTours: TodayTour[] = res.data.todaysTours || [];
         setTodaysTours(apiTours);
         setTodayCalls(res.data.todayCalls || []);
+        setLoading(false);
+
+        // Load action-needed in background (can be slower with AI processing)
+        try {
+          const actionRes = await api.get('/school/action-needed');
+          setNeedsAttention(actionRes.data.actionNeeded || []);
+        } catch (err) {
+          console.error('Failed to load action-needed:', err);
+        }
       } catch (err) {
         console.error('Failed to load daily insights:', err);
-      } finally {
         setLoading(false);
       }
     };
