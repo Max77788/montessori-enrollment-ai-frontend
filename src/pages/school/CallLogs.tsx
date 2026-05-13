@@ -231,6 +231,20 @@ export const SchoolCallLogs = () => {
 
     return (
         <div className="max-w-6xl mx-auto py-6 px-4">
+            <style>{`
+                @keyframes shimmer { 0% { background-position: -400px 0; } 100% { background-position: 400px 0; } }
+                @keyframes fadeSlideUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+                .shimmer { background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%); background-size: 800px 100%; animation: shimmer 1.5s infinite linear; }
+                .shard-1 { animation: fadeSlideUp 0.35s ease-out both; }
+                .shard-2 { animation: fadeSlideUp 0.35s 0.06s ease-out both; }
+                .shard-3 { animation: fadeSlideUp 0.35s 0.12s ease-out both; }
+                .shard-4 { animation: fadeSlideUp 0.35s 0.18s ease-out both; }
+                .shard-5 { animation: fadeSlideUp 0.35s 0.24s ease-out both; }
+                @keyframes pulseDot { 0%,100% { opacity: .3; } 50% { opacity: 1; } }
+                .pulse-dot-1 { animation: pulseDot 1.2s infinite; }
+                .pulse-dot-2 { animation: pulseDot 1.2s .3s infinite; }
+                .pulse-dot-3 { animation: pulseDot 1.2s .6s infinite; }
+            `}</style>
             <div className="mb-8 flex flex-col sm:flex-row sm:items-baseline justify-between border-b border-slate-100 pb-6 gap-4">
                 <div>
                     <h1 className="text-2xl font-bold text-slate-900">{t('call_logs')}</h1>
@@ -252,15 +266,21 @@ export const SchoolCallLogs = () => {
 
             {loading ? (
                 <div className="space-y-3">
+                    <div className="flex items-center gap-2 mb-1 ml-1">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Syncing calls</span>
+                        <span className="pulse-dot-1 text-slate-300 text-lg leading-none">·</span>
+                        <span className="pulse-dot-2 text-slate-300 text-lg leading-none">·</span>
+                        <span className="pulse-dot-3 text-slate-300 text-lg leading-none">·</span>
+                    </div>
                     {[1,2,3,4,5].map(i => (
-                        <div key={i} className="bg-white border border-slate-100 rounded-2xl px-5 py-4 animate-pulse">
+                        <div key={i} className={`shard-${i} bg-white border border-slate-100 rounded-2xl px-5 py-4`}>
                             <div className="flex items-center gap-4">
-                                <div className="w-11 h-11 bg-slate-100 rounded-2xl" />
+                                <div className="w-11 h-11 shimmer rounded-2xl" />
                                 <div className="flex-1 space-y-2">
-                                    <div className="h-4 bg-slate-100 rounded w-40" />
-                                    <div className="h-3 bg-slate-50 rounded w-24" />
+                                    <div className="shimmer h-4 rounded w-40" />
+                                    <div className="shimmer h-3 rounded w-24" />
                                 </div>
-                                <div className="w-5 h-5 bg-slate-100 rounded" />
+                                <div className="w-5 h-5 shimmer rounded" />
                             </div>
                         </div>
                     ))}
