@@ -5,6 +5,7 @@ import {
   Headphones, Download, CheckCircle2,
   Check, X
 } from 'lucide-react';
+import { useStaleData } from '../../hooks/useStaleData';
 import api from '../../api/axios';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -154,9 +155,6 @@ const MiniPlayer = ({ src }: { src: string }) => {
 // ─── Main Component ───────────────────────────────────────────────────────────
 export const DailyInsights = () => {
   const [needsAttention, setNeedsAttention] = useState<NeedsAttentionCall[]>([]);
-  const [todaysTours, setTodaysTours] = useState<TodayTour[]>([]);
-  const [todayCalls, setTodayCalls] = useState<{ id: string; timestamp: string }[]>([]);
-  const [loading, setLoading] = useState(true);
   const [expandedCall, setExpandedCall] = useState<string | null>(null);
   const [, setNow] = useState(Date.now());
   const [feedbackInputs, setFeedbackInputs] = useState<Record<string, string>>({});
@@ -306,33 +304,18 @@ export const DailyInsights = () => {
     return () => clearInterval(tick);
   }, []);
 
-  useEffect(() => {
-    const load = async () => {
-      setLoading(true);
-      try {
-        // Load daily-insights first (fast stats + tours), show page immediately
-        const res = await api.get(`/school/daily-insights?date=${selectedDate}`);
-        const apiTours: TodayTour[] = res.data.todaysTours || [];
-        setTodaysTours(apiTours);
-        setTodayCalls(res.data.todayCalls || []);
-        setLoading(false);
-
-        // Load action-needed in background (can be slower with AI processing)
-        try {
-          const actionRes = await api.get('/school/action-needed');
-          setNeedsAttention(actionRes.data.actionNeeded || []);
-        } catch (err) {
-          console.error('Failed to load action-needed:', err);
-        }
-      } catch (err) {
-        console.error('Failed to load daily insights:', err);
-        setLoading(false);
-      }
-    };
-    load();
-    const interval = setInterval(load, 60000);
-    return () => clearInterval(interval);
-  }, [selectedDate]);
+  const { data: dailyData, loading } = useStaleData<{ todaysTours: TodayTour[], todayCalls: { id: string, timestamp: string }[] }>(
+    `daily-insights-${selectedDate}`,
+    async () => {
+      const res = await api.get(`/school/daily-insights?date=${selectedDate}`);
+      // Load action-needed in background after main data arrives
+      api.get('/school/action-needed').then(r => setNeedsAttention(r.data.actionNeeded || [])).catch(() => {});
+      return { todaysTours: res.data.todaysTours || [], todayCalls: res.data.todayCalls || [] };
+    },
+    [selectedDate]
+  );
+  const todaysTours = dailyData?.todaysTours || [];
+  const todayCalls = dailyData?.todayCalls || [];
 
   const handleMarkActionTaken = async (callId: string) => {
     setMarkingAction(prev => ({ ...prev, [callId]: true }));

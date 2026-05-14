@@ -5,6 +5,7 @@ import {
     Calendar, ChevronDown, User, Bot, Headphones,
     Users, Mail, CheckCircle, AlertCircle, MessageCircle, Tag
 } from 'lucide-react';
+import { useStaleData } from '../../hooks/useStaleData';
 import api from '../../api/axios';
 
 interface TranscriptItem {
@@ -190,23 +191,10 @@ const AudioPlayer = ({ src }: { src: string }) => {
 
 export const SchoolCallLogs = () => {
     const { t } = useTranslation();
-    const [logs, setLogs] = useState<CallLogData[]>([]);
-    const [loading, setLoading] = useState(true);
     const [expandedId, setExpandedId] = useState<string | null>(null);
-
-    useEffect(() => {
-        const fetchLogs = async () => {
-            try {
-                const res = await api.get('/school/call-logs');
-                setLogs(res.data);
-            } catch (err) {
-                console.error('Failed to load call logs:', err);
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchLogs();
-    }, []);
+    const { data: logs, loading } = useStaleData<CallLogData[]>('call-logs',
+        async () => { const r = await api.get('/school/call-logs'); return r.data; }, []);
+    const safeLogs = logs || [];
 
     const toggleExpand = (id: string | null) => setExpandedId(expandedId === id ? null : id);
 
@@ -285,7 +273,7 @@ export const SchoolCallLogs = () => {
                         </div>
                     ))}
                 </div>
-            ) : logs.length === 0 ? (
+            ) : safeLogs.length === 0 ? (
                 <div className="bg-white border border-slate-200 rounded-3xl p-16 text-center">
                     <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-5">
                         <Phone className="w-8 h-8 text-slate-300" />
@@ -295,7 +283,7 @@ export const SchoolCallLogs = () => {
                 </div>
             ) : (
             <div className="space-y-3">
-                {logs.map((log, idx) => {
+                {safeLogs.map((log, idx) => {
                     const isExpanded = expandedId === log.id;
                     const hasAudio = log.recordingUrl && !log.recordingUrl.includes('example.com');
                     const hasTranscript = log.transcript.length > 0;
