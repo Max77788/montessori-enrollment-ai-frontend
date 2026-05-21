@@ -1,6 +1,6 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Save, Loader2, Phone, MessageSquare, CheckCircle, AlertCircle, Plus, Trash2, MapPin } from 'lucide-react';
+import { Loader2, Phone, MessageSquare, CheckCircle, AlertCircle, Plus, Trash2, MapPin } from 'lucide-react';
 import api from '../../api/axios';
 
 interface QAPair {
@@ -83,11 +83,13 @@ export const SchoolSettings = () => {
   const { t } = useTranslation();
   const [settings, setSettings] = useState<SettingsData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [activeTab, setActiveTab] = useState<Tab>('agent');
   const [detectingTimezone, setDetectingTimezone] = useState(false);
   const [purchasingPhone, setPurchasingPhone] = useState(false);
+  const [autoSaveState, setAutoSaveState] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const initialLoad = useRef(true);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // ── Load settings on mount ──────────────────────────────────────────────
   useEffect(() => {
@@ -119,69 +121,77 @@ export const SchoolSettings = () => {
       .catch(err => {
         console.error('[Settings] Failed to load settings:', err);
       })
-      .finally(() => setLoading(false));
+      .finally(() => {
+        setLoading(false);
+        initialLoad.current = false;
+      });
   }, []);
 
-  // ── Save all settings to DB ──────────────────────────────────────────────
-  const saveSettings = useCallback(async () => {
-    if (!settings) return;
+  // ── Auto-save (debounced) ──────────────────────────────────────────────
+  const doSave = useCallback(async (settingsToSave: SettingsData) => {
     if (
-      settings.enableHumanTransfer
-      && !settings.humanTransferPhoneNumber.trim()
+      settingsToSave.enableHumanTransfer
+      && !settingsToSave.humanTransferPhoneNumber.trim()
     ) {
-      setStatus({
-        type: 'error',
-        message: 'Please provide a forwarding phone number when Human Transfer is enabled.',
-      });
-      return;
+      return; // silently skip — validation will show when they add the number
     }
 
-    setSaving(true);
-    setStatus(null);
+    setAutoSaveState('saving');
 
     const payload = {
-      name: settings.name,
-      address: settings.address,
-      aiNumber: settings.aiNumber,
-      routingNumber: settings.routingNumber,
-      escalationNumber: settings.escalationNumber,
-      language: settings.language,
-      script: settings.script,
-      systemPrompt: settings.systemPrompt,
-      businessHoursStart: settings.businessHoursStart,
-      businessHoursEnd: settings.businessHoursEnd,
-      smsAutoFollowup: settings.smsAutoFollowup,
-      emailAutoFollowup: settings.emailAutoFollowup,
-      smsTemplate: settings.smsTemplate,
-      emailTemplate: settings.emailTemplate,
-      qaPairs: cleanQAPairs(settings.qaPairs),
-      preferredCalendar: settings.preferredCalendar,
-      preferredEmailProvider: settings.preferredEmailProvider,
-      timezone: settings.timezone,
-      adminEmail: settings.adminEmail,
-      enableHumanTransfer: settings.enableHumanTransfer,
-      humanTransferCondition: settings.humanTransferCondition,
-      humanTransferPhoneNumber: settings.humanTransferPhoneNumber,
-      tourConfirmationEmailTemplate: settings.tourConfirmationEmailTemplate,
-      tourReminderSmsTemplate: settings.tourReminderSmsTemplate,
+      name: settingsToSave.name,
+      address: settingsToSave.address,
+      aiNumber: settingsToSave.aiNumber,
+      routingNumber: settingsToSave.routingNumber,
+      escalationNumber: settingsToSave.escalationNumber,
+      language: settingsToSave.language,
+      script: settingsToSave.script,
+      systemPrompt: settingsToSave.systemPrompt,
+      businessHoursStart: settingsToSave.businessHoursStart,
+      businessHoursEnd: settingsToSave.businessHoursEnd,
+      smsAutoFollowup: settingsToSave.smsAutoFollowup,
+      emailAutoFollowup: settingsToSave.emailAutoFollowup,
+      smsTemplate: settingsToSave.smsTemplate,
+      emailTemplate: settingsToSave.emailTemplate,
+      qaPairs: cleanQAPairs(settingsToSave.qaPairs),
+      preferredCalendar: settingsToSave.preferredCalendar,
+      preferredEmailProvider: settingsToSave.preferredEmailProvider,
+      timezone: settingsToSave.timezone,
+      adminEmail: settingsToSave.adminEmail,
+      enableHumanTransfer: settingsToSave.enableHumanTransfer,
+      humanTransferCondition: settingsToSave.humanTransferCondition,
+      humanTransferPhoneNumber: settingsToSave.humanTransferPhoneNumber,
+      tourConfirmationEmailTemplate: settingsToSave.tourConfirmationEmailTemplate,
+      tourReminderSmsTemplate: settingsToSave.tourReminderSmsTemplate,
       voiceProvider: 'vapi',
-      vapiAssistantId: settings.vapiAssistantId,
-      tourBookingLink: settings.tourBookingLink,
+      vapiAssistantId: settingsToSave.vapiAssistantId,
+      tourBookingLink: settingsToSave.tourBookingLink,
     };
 
     try {
       const res = await api.put('/school/settings', payload);
-      console.log('[Settings] Saved successfully:', res.data);
-      setStatus({ type: 'success', message: `Settings saved — ${res.data.qaPairsCount ?? 0} Q&A pairs stored.` });
+      console.log('[Settings] Auto-saved:', res.data);
+      setAutoSaveState('saved');
+      setTimeout(() => setAutoSaveState('idle'), 2000);
     } catch (err: any) {
-      console.error('[Settings] Save failed:', err);
-      const msg = err?.response?.data?.error || 'Failed to save settings. Please try again.';
+      console.error('[Settings] Auto-save failed:', err);
+      const msg = err?.response?.data?.error || 'Failed to save';
       setStatus({ type: 'error', message: msg });
-    } finally {
-      setSaving(false);
       setTimeout(() => setStatus(null), 5000);
+      setAutoSaveState('idle');
     }
-  }, [settings]);
+  }, []);
+
+  // Debounced auto-save: fires 1.5s after last change, skips initial load
+  useEffect(() => {
+    if (!settings || initialLoad.current) return;
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    setAutoSaveState('idle');
+    debounceRef.current = setTimeout(() => {
+      doSave(settings);
+    }, 1500);
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+  }, [settings, doSave]);
 
   // ── Update a single top-level field ─────────────────────────────────────
   const update = useCallback(<K extends keyof SettingsData>(field: K, value: SettingsData[K]) => {
@@ -293,15 +303,17 @@ export const SchoolSettings = () => {
           <h1 className="text-2xl font-semibold text-slate-900">{t('settings_title')}</h1>
           <p className="text-sm text-slate-500 mt-0.5">{t('settings_desc')}</p>
         </div>
-        <button
-          type="button"
-          onClick={saveSettings}
-          disabled={saving}
-          className="ui-button-primary flex items-center justify-center gap-2 w-full sm:w-auto"
-        >
-          {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-          {saving ? t('saving') : t('save_settings')}
-        </button>
+        <div className="flex items-center gap-2 text-xs font-medium">
+          {autoSaveState === 'saving' ? (
+            <span className="flex items-center gap-1.5 text-slate-400">
+              <Loader2 className="w-3.5 h-3.5 animate-spin" /> Saving...
+            </span>
+          ) : autoSaveState === 'saved' ? (
+            <span className="flex items-center gap-1.5 text-emerald-600">
+              <CheckCircle className="w-3.5 h-3.5" /> Saved
+            </span>
+          ) : null}
+        </div>
       </div>
 
       {/* Toast Notification */}
@@ -663,18 +675,8 @@ export const SchoolSettings = () => {
         )}
 
 
-        {/* Bottom save button */}
-        <div className="flex justify-end pb-8">
-          <button
-            type="button"
-            onClick={saveSettings}
-            disabled={saving}
-            className="ui-button-primary flex items-center justify-center gap-2 w-full sm:w-auto"
-          >
-            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-            {saving ? t('saving') : t('save_settings')}
-          </button>
-        </div>
+        {/* Settings auto-save — no button needed */}
+        <div className="pb-8" />
 
       </div>
     </div>
