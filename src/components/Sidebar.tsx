@@ -29,7 +29,6 @@ export const Sidebar = ({ role, isOpen, onClose }: SidebarProps) => {
     { path: '/school/integrations', icon: Plug2, labelKey: 'integrations' },
     { path: '/school/billing', icon: CreditCard, labelKey: 'billing' },
     { path: '/school/settings', icon: Settings, labelKey: 'settings' },
-    { path: '/school/call-logs', icon: Phone, labelKey: 'call_logs' },
     { path: '/school/referrals', icon: Users, labelKey: 'referrals' },
   ];
 

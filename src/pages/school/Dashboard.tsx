@@ -7,26 +7,11 @@ import { Link } from 'react-router-dom';
 import axios from 'axios';
 import api from '../../api/axios';
 import { Calendar as CalendarUI } from '../../components/Calendar';
-import { RecentCalls } from '../../components/RecentCalls';
+import { SchoolCallLogs } from './CallLogs';
 
 interface DashboardResponse {
   metrics: Array<{ label: string; value: number; change?: number; maxValue?: number }>;
   chartData: Array<{ name: string; calls: number; inquiries: number }>;
-  recentCalls: Array<{
-    id: string;
-    conversationId?: string | null;
-    callerName: string;
-    callerPhone: string;
-    callType: string;
-    duration: number;
-    timestamp: string;
-    recordingUrl: string | null;
-    summary?: string;
-    tourBookingDetected?: boolean;
-    tourBookingDate?: string | null;
-    aiProcessed?: boolean;
-  }>;
-
 }
 
 export const SchoolDashboard = () => {
@@ -107,7 +92,6 @@ export const SchoolDashboard = () => {
 
   const metrics = data?.metrics || [];
   const chartData = data?.chartData || [];
-  const recentCalls = data?.recentCalls || [];
 
 
   return (
@@ -187,9 +171,9 @@ export const SchoolDashboard = () => {
         )}
       </div>
 
-      {/* Recent Calls from VAPI Structured Output */}
+      {/* Call Logs */}
       <div className="mb-10">
-        <RecentCalls />
+        <SchoolCallLogs />
       </div>
 
       {/* Row 2: Main Content Layout */}
