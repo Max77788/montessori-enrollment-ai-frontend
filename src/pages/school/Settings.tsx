@@ -127,11 +127,11 @@ export const SchoolSettings = () => {
     if (!settings) return;
     if (
       settings.enableHumanTransfer
-      && (!settings.humanTransferCondition.trim() || !settings.humanTransferPhoneNumber.trim())
+      && !settings.humanTransferPhoneNumber.trim()
     ) {
       setStatus({
         type: 'error',
-        message: 'Condition and transfer phone number are required when Human Transfer is enabled.',
+        message: 'Please provide a forwarding phone number when Human Transfer is enabled.',
       });
       return;
     }
@@ -486,6 +486,22 @@ export const SchoolSettings = () => {
               </div>
 
               <div className="mt-6 pt-6 border-t border-slate-100">
+                <label className="flex items-center gap-2 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={settings.enableHumanTransfer || false}
+                    onChange={e => update('enableHumanTransfer', e.target.checked)}
+                    className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <span className="text-sm font-medium text-slate-700">Enable Human Transfer</span>
+                </label>
+                <p className="text-xs text-slate-400 mt-1 ml-6">
+                  When enabled, Nora will offer to transfer the caller to a staff member.
+                </p>
+              </div>
+
+              {settings.enableHumanTransfer && (
+              <div className="mt-4 pl-6">
                 <label className="block text-sm font-medium text-slate-700 mb-1">Call Forwarding Number</label>
                 <input
                   type="tel"
@@ -495,9 +511,10 @@ export const SchoolSettings = () => {
                   placeholder="+1 (555) 123-4567"
                 />
                 <p className="text-xs text-slate-400 mt-1">
-                  If a caller asks to speak with a human, Nora will transfer the call to this number.
+                  Nora will transfer calls to this number when the caller requests a human.
                 </p>
               </div>
+              )}
 
             </div>
 
