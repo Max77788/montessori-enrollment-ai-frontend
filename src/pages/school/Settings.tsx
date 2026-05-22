@@ -236,7 +236,12 @@ export const SchoolSettings = () => {
     try {
       const res = await api.post('/school/purchase-phone');
       const number = res.data.phoneNumber;
-      update('aiNumber', number);
+      setSettings(prev => {
+        if (!prev) return prev;
+        const next = { ...prev, aiNumber: number };
+        savedSettingsRef.current = JSON.stringify(next); // mark as saved since backend already persisted
+        return next;
+      });
       setStatus({ type: 'success', message: `Phone number ${number} purchased and assigned!` });
       setTimeout(() => setStatus(null), 8000);
     } catch (err: any) {
