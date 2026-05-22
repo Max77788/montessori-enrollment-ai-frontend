@@ -153,6 +153,10 @@ export const SchoolSettings = () => {
   // ── Manual save ────────────────────────────────────────────────────────
   const saveSettings = useCallback(async () => {
     if (!settings) return;
+    if (settings.enableHumanTransfer && !settings.humanTransferPhoneNumber.trim()) {
+      setStatus({ type: 'error', message: 'Please provide a forwarding phone number when Human Transfer is enabled.' });
+      return;
+    }
     setSaving(true);
     setStatus(null);
 
