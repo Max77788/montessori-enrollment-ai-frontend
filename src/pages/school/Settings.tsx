@@ -507,7 +507,7 @@ export const SchoolSettings = () => {
                   placeholder="https://yourschool.com/book-a-tour"
                 />
                 <p className="text-xs text-slate-400 mt-1">
-                  The link Nora sends via SMS when a caller requests the tour booking form. Use <code className="bg-slate-100 px-1 rounded">{"{{tour_booking_link}}"}</code> in your assistant prompt.
+                  The link Nora sends via SMS when a caller requests the tour booking form.
                 </p>
               </div>
 
