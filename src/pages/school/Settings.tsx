@@ -129,13 +129,6 @@ export const SchoolSettings = () => {
 
   // ── Auto-save (debounced) ──────────────────────────────────────────────
   const doSave = useCallback(async (settingsToSave: SettingsData) => {
-    if (
-      settingsToSave.enableHumanTransfer
-      && !settingsToSave.humanTransferPhoneNumber.trim()
-    ) {
-      return; // silently skip — validation will show when they add the number
-    }
-
     setAutoSaveState('saving');
 
     const payload = {
