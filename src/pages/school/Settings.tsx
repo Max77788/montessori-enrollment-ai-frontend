@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Loader2, Phone, MessageSquare, CheckCircle, AlertCircle, Plus, Trash2, MapPin } from 'lucide-react';
+import { Save, Loader2, Phone, MessageSquare, CheckCircle, AlertCircle, Plus, Trash2, MapPin } from 'lucide-react';
 import api from '../../api/axios';
 
 interface QAPair {
@@ -87,9 +87,10 @@ export const SchoolSettings = () => {
   const [activeTab, setActiveTab] = useState<Tab>('agent');
   const [detectingTimezone, setDetectingTimezone] = useState(false);
   const [purchasingPhone, setPurchasingPhone] = useState(false);
-  const [autoSaveState, setAutoSaveState] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const [saving, setSaving] = useState(false);
+  const [dirty, setDirty] = useState(false);
   const initialLoad = useRef(true);
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const savedSettingsRef = useRef<string>(''); // JSON snapshot of last saved state
 
   // ── Load settings on mount ──────────────────────────────────────────────
   useEffect(() => {
@@ -109,14 +110,16 @@ export const SchoolSettings = () => {
           }
         }
 
-        setSettings({
+        const hydrated = {
           ...data,
           qaPairs,
           tourBookingLink: data.tourBookingLink || '',
           enableHumanTransfer: Boolean(data.enableHumanTransfer),
           humanTransferCondition: data.humanTransferCondition || '',
           humanTransferPhoneNumber: data.humanTransferPhoneNumber || '',
-        });
+        };
+        setSettings(hydrated);
+        savedSettingsRef.current = JSON.stringify(hydrated);
       })
       .catch(err => {
         console.error('[Settings] Failed to load settings:', err);
@@ -127,64 +130,77 @@ export const SchoolSettings = () => {
       });
   }, []);
 
-  // ── Auto-save (debounced) ──────────────────────────────────────────────
-  const doSave = useCallback(async (settingsToSave: SettingsData) => {
-    setAutoSaveState('saving');
+  // ── Track unsaved changes ──────────────────────────────────────────────
+  // Compare current settings against last saved snapshot to determine dirty state
+  useEffect(() => {
+    if (!settings || initialLoad.current) return;
+    const current = JSON.stringify(settings);
+    setDirty(current !== savedSettingsRef.current);
+  }, [settings]);
+
+  // ── Warn before leaving with unsaved changes ────────────────────────────
+  useEffect(() => {
+    const handler = (e: BeforeUnloadEvent) => {
+      if (dirty) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [dirty]);
+
+  // ── Manual save ────────────────────────────────────────────────────────
+  const saveSettings = useCallback(async () => {
+    if (!settings) return;
+    setSaving(true);
+    setStatus(null);
 
     const payload = {
-      name: settingsToSave.name,
-      address: settingsToSave.address,
-      aiNumber: settingsToSave.aiNumber,
-      routingNumber: settingsToSave.routingNumber,
-      escalationNumber: settingsToSave.escalationNumber,
-      language: settingsToSave.language,
-      script: settingsToSave.script,
-      systemPrompt: settingsToSave.systemPrompt,
-      businessHoursStart: settingsToSave.businessHoursStart,
-      businessHoursEnd: settingsToSave.businessHoursEnd,
-      smsAutoFollowup: settingsToSave.smsAutoFollowup,
-      emailAutoFollowup: settingsToSave.emailAutoFollowup,
-      smsTemplate: settingsToSave.smsTemplate,
-      emailTemplate: settingsToSave.emailTemplate,
-      qaPairs: cleanQAPairs(settingsToSave.qaPairs),
-      preferredCalendar: settingsToSave.preferredCalendar,
-      preferredEmailProvider: settingsToSave.preferredEmailProvider,
-      timezone: settingsToSave.timezone,
-      adminEmail: settingsToSave.adminEmail,
-      enableHumanTransfer: settingsToSave.enableHumanTransfer,
-      humanTransferCondition: settingsToSave.humanTransferCondition,
-      humanTransferPhoneNumber: settingsToSave.humanTransferPhoneNumber,
-      tourConfirmationEmailTemplate: settingsToSave.tourConfirmationEmailTemplate,
-      tourReminderSmsTemplate: settingsToSave.tourReminderSmsTemplate,
+      name: settings.name,
+      address: settings.address,
+      aiNumber: settings.aiNumber,
+      routingNumber: settings.routingNumber,
+      escalationNumber: settings.escalationNumber,
+      language: settings.language,
+      script: settings.script,
+      systemPrompt: settings.systemPrompt,
+      businessHoursStart: settings.businessHoursStart,
+      businessHoursEnd: settings.businessHoursEnd,
+      smsAutoFollowup: settings.smsAutoFollowup,
+      emailAutoFollowup: settings.emailAutoFollowup,
+      smsTemplate: settings.smsTemplate,
+      emailTemplate: settings.emailTemplate,
+      qaPairs: cleanQAPairs(settings.qaPairs),
+      preferredCalendar: settings.preferredCalendar,
+      preferredEmailProvider: settings.preferredEmailProvider,
+      timezone: settings.timezone,
+      adminEmail: settings.adminEmail,
+      enableHumanTransfer: settings.enableHumanTransfer,
+      humanTransferCondition: settings.humanTransferCondition,
+      humanTransferPhoneNumber: settings.humanTransferPhoneNumber,
+      tourConfirmationEmailTemplate: settings.tourConfirmationEmailTemplate,
+      tourReminderSmsTemplate: settings.tourReminderSmsTemplate,
       voiceProvider: 'vapi',
-      vapiAssistantId: settingsToSave.vapiAssistantId,
-      tourBookingLink: settingsToSave.tourBookingLink,
+      vapiAssistantId: settings.vapiAssistantId,
+      tourBookingLink: settings.tourBookingLink,
     };
 
     try {
       const res = await api.put('/school/settings', payload);
-      console.log('[Settings] Auto-saved:', res.data);
-      setAutoSaveState('saved');
-      setTimeout(() => setAutoSaveState('idle'), 2000);
+      console.log('[Settings] Saved:', res.data);
+      savedSettingsRef.current = JSON.stringify(settings);
+      setDirty(false);
+      setStatus({ type: 'success', message: `Settings saved — ${res.data.qaPairsCount ?? 0} Q&A pairs stored.` });
     } catch (err: any) {
-      console.error('[Settings] Auto-save failed:', err);
-      const msg = err?.response?.data?.error || 'Failed to save';
+      console.error('[Settings] Save failed:', err);
+      const msg = err?.response?.data?.error || 'Failed to save settings.';
       setStatus({ type: 'error', message: msg });
+    } finally {
+      setSaving(false);
       setTimeout(() => setStatus(null), 5000);
-      setAutoSaveState('idle');
     }
-  }, []);
-
-  // Debounced auto-save: fires 1.5s after last change, skips initial load
-  useEffect(() => {
-    if (!settings || initialLoad.current) return;
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    setAutoSaveState('idle');
-    debounceRef.current = setTimeout(() => {
-      doSave(settings);
-    }, 1500);
-    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
-  }, [settings, doSave]);
+  }, [settings]);
 
   // ── Update a single top-level field ─────────────────────────────────────
   const update = useCallback(<K extends keyof SettingsData>(field: K, value: SettingsData[K]) => {
@@ -296,16 +312,21 @@ export const SchoolSettings = () => {
           <h1 className="text-2xl font-semibold text-slate-900">{t('settings_title')}</h1>
           <p className="text-sm text-slate-500 mt-0.5">{t('settings_desc')}</p>
         </div>
-        <div className="flex items-center gap-2 text-xs font-medium">
-          {autoSaveState === 'saving' ? (
-            <span className="flex items-center gap-1.5 text-slate-400">
-              <Loader2 className="w-3.5 h-3.5 animate-spin" /> Saving...
+        <div className="flex items-center gap-3">
+          {dirty && (
+            <span className="text-[10px] font-bold text-amber-600 bg-amber-50 px-2 py-1 rounded-full border border-amber-200">
+              Unsaved changes
             </span>
-          ) : autoSaveState === 'saved' ? (
-            <span className="flex items-center gap-1.5 text-emerald-600">
-              <CheckCircle className="w-3.5 h-3.5" /> Saved
-            </span>
-          ) : null}
+          )}
+          <button
+            type="button"
+            onClick={saveSettings}
+            disabled={saving || !dirty}
+            className="ui-button-primary flex items-center justify-center gap-2 w-full sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+            {saving ? 'Saving...' : 'Save Settings'}
+          </button>
         </div>
       </div>
 
@@ -668,8 +689,18 @@ export const SchoolSettings = () => {
         )}
 
 
-        {/* Settings auto-save — no button needed */}
-        <div className="pb-8" />
+        {/* Bottom save button */}
+        <div className="flex justify-end pb-8">
+          <button
+            type="button"
+            onClick={saveSettings}
+            disabled={saving || !dirty}
+            className="ui-button-primary flex items-center justify-center gap-2 w-full sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+            {saving ? 'Saving...' : 'Save Settings'}
+          </button>
+        </div>
 
       </div>
     </div>
